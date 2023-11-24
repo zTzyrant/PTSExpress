@@ -23,11 +23,17 @@ const route = require("./routes/route")
 const auth = require("./routes/auth")
 const ministry = require("./routes/ministry")
 const merchant = require("./routes/merchant")
+const payment = require("./routes/payment")
 
-app.use(cors())
 app.use("/api", route)
 app.use("/auth", auth)
 app.use("/ministry", ministry)
 app.use("/merchant", merchant)
+app.use("/payment", payment)
+
+app.post("/test-ft", (req, res) => {
+  console.log(req.body)
+  res.status(200).json({ message: "success" })
+})
 
 app.listen(port, host, () => console.log(`Server running on port ${port}`))

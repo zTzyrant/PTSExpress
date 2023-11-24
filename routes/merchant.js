@@ -6,12 +6,15 @@ const Products = require("../models/products")
 const Product_Pictures = require("../models/product_pictures")
 const picture_upload = require("../functions/picture_upload")
 const mongoose = require("mongoose")
+const ssTunel = require("../functions/routeFrom")
+const Invoice = require("../models/invoice")
 
 merchant.get("/products", async (req, res) => {
   if (req.headers["authorization"]) {
     try {
       const token = req.headers["authorization"].split(" ")[1]
       const decoded = await authFunction.verifyToken(token)
+      console.log(decoded)
       if (decoded.is_merchant) {
         const products = await Products.aggregate([
           // Match products by merchant_id
@@ -40,6 +43,13 @@ merchant.get("/products", async (req, res) => {
         if (products.length === 0) {
           res.status(404).json({ message: "Products not found" })
         } else {
+          const originFrom = ssTunel.isFromTunnel(req.headers.origin)
+
+          products.forEach((product) => {
+            product.pictures.forEach((picture) => {
+              picture.url = `${originFrom}${picture.url}`
+            })
+          })
           res.json(products)
         }
       } else {
@@ -83,6 +93,11 @@ merchant.get("/products/:id", async (req, res) => {
           },
         ])
         if (product[0].merchant_id === decoded.merchant_id) {
+          console.log(req.headers.origin)
+          const originFrom = ssTunel.isFromTunnel(req.headers.origin)
+          product[0].pictures.forEach((picture) => {
+            picture.url = `${originFrom}${picture.url}`
+          })
           res.json(product[0])
         } else {
           console.log(product.merchant_id, decoded.merchant_id)
@@ -144,6 +159,11 @@ merchant.post("/products", async (req, res) => {
         }
         if (!price) {
           return res.status(400).json({ message: "Price is required" })
+        }
+        if (price < 10) {
+          return res
+            .status(400)
+            .json({ message: "Price must be greater than 10 MYR" })
         }
         if (!number_of_guests || number_of_guests < 1) {
           return res
@@ -463,4 +483,46 @@ merchant.delete("/products/:id", async (req, res) => {
   }
 })
 
+merchant.get("/orders", async (req, res) => {
+  if (req.headers["authorization"]) {
+    try {
+      const token = req.headers["authorization"].split(" ")[1]
+      const decoded = await authFunction.verifyToken(token)
+
+      if (decoded.is_merchant) {
+        const invoice = await Invoice.aggregate([
+          {
+            $match: {
+              merchant_id: decoded.merchant_id,
+            },
+          },
+          {
+            $lookup: {
+              from: "products",
+              localField: "product_id",
+              foreignField: "_id",
+              as: "product",
+            },
+          },
+          {
+            $lookup: {
+              from: "users",
+              localField: "user_id",
+              foreignField: "_id",
+              as: "user",
+            },
+          },
+        ])
+
+        res.json(invoice)
+      } else {
+        res.status(403).json({ message: "Forbidden not merchant" })
+      }
+    } catch (err) {
+      res.status(500).json({ message: err.message })
+    }
+  } else {
+    res.status(401).json({ message: "Unauthorized" })
+  }
+})
 module.exports = merchant

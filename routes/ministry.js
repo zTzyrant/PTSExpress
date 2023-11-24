@@ -6,8 +6,9 @@ const Merchant = require("../models/merchant")
 const authFunction = require("../functions/authFunction")
 const merchaantMail = require("../mails/merchantMailer")
 
-ministry.get("/", (req, res) => {
-  res.send("Hello world from ministry")
+ministry.use("/", (req, res, next) => {
+  console.log("Time:", Date.now())
+  next()
 })
 
 ministry.put("/approve/:id", async (req, res) => {
@@ -21,6 +22,18 @@ ministry.put("/approve/:id", async (req, res) => {
         })
         console.log(merchant)
         if (merchant.status === "pending") {
+          const checkIfUsernameExist = await Users.findOne({
+            username: merchant.company_username,
+          })
+          const checkIfEmailExist = await Users.findOne({
+            email: merchant.email,
+          })
+          if (checkIfUsernameExist || checkIfEmailExist) {
+            throw {
+              message: `Username or email already exist`,
+              isUsernameOrEmailExist: true,
+            }
+          }
           const password = authFunction.generatePassword()
           const hashedPassword = await authFunction.hashPassword(password)
           console.log(`Password: ${password}`)
@@ -56,7 +69,12 @@ ministry.put("/approve/:id", async (req, res) => {
         res.status(403).json({ message: "Forbidden not ministry" })
       }
     } catch (err) {
-      res.status(500).json({ message: err.message })
+      console.log(err)
+      if (err.isUsernameOrEmailExist) {
+        res.status(400).json({ message: err.message })
+      } else {
+        res.status(500).json({ message: err.message })
+      }
     }
   } else {
     res.status(403).json({ message: "Forbidden" })
@@ -81,6 +99,46 @@ ministry.put("/reject/:id", async (req, res) => {
           res
             .status(400)
             .json({ message: `Merchant already ${merchant.status}` })
+        }
+      } else {
+        res.status(403).json({ message: "Forbidden not ministry" })
+      }
+    } catch (err) {
+      res.status(500).json({ message: err.message })
+    }
+  } else {
+    res.status(403).json({ message: "Forbidden" })
+  }
+})
+
+ministry.put("/reset-password/merchant/:id", async (req, res) => {
+  if (req.headers["authorization"]) {
+    try {
+      const token = req.headers["authorization"].split(" ")[1]
+      const decoded = await authFunction.verifyToken(token)
+
+      if (decoded.is_ministry) {
+        const merchant = await Merchant.findOne({
+          _id: req.params.id,
+        })
+        if (merchant.status === "approved") {
+          const password = authFunction.generatePassword()
+          const hashedPassword = await authFunction.hashPassword(password)
+          console.log(`Password: ${password}`)
+          const user = await Users.findOne({ merchant_id: merchant._id })
+          user.password = hashedPassword
+          await user.save()
+          const merchant_data = {
+            email: merchant.email,
+            username: merchant.company_username,
+            company_name: merchant.company_name,
+            password: password,
+          }
+          merchaantMail.merchantResetPassword(merchant_data, res)
+        } else {
+          res
+            .status(400)
+            .json({ message: `Invalid merchant status is ${merchant.status}` })
         }
       } else {
         res.status(403).json({ message: "Forbidden not ministry" })

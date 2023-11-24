@@ -5,6 +5,7 @@ const Users = require("../models/users")
 const jwt = require("jsonwebtoken")
 const authFunction = require("../functions/authFunction")
 const moment = require("moment")
+const globalMailer = require("../mails/globalMailer")
 
 auth.get("/", (req, res) => {
   res.send("Hello world from auth")
@@ -52,7 +53,9 @@ auth.post("/login", async (req, res) => {
 })
 
 auth.get("/user/profile", async (req, res) => {
-  const token = req.headers["authorization"].split(" ")[1]
+  const token = req.headers["authorization"]
+    ? req.headers["authorization"].split(" ")[1]
+    : null
   console.log(token)
   if (token) {
     try {
@@ -145,13 +148,15 @@ auth.get("/check-email/:email", async (req, res) => {
 })
 
 auth.get("/is-ministry", async (req, res) => {
-  const token = req.headers["authorization"].split(" ")[1]
+  const token = req.headers["authorization"]
+    ? req.headers["authorization"].split(" ")[1]
+    : null
   if (token) {
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET)
       const user = await Users.findOne({ _id: decoded.id })
       if (user.is_ministry) {
-        res.status(200).json({ is_ministry: decoded.is_ministry })
+        res.status(200).json({ is_ministry: user.is_ministry })
       } else {
         throw { message: "User is not ministry", status: 403 }
       }
@@ -168,13 +173,15 @@ auth.get("/is-ministry", async (req, res) => {
 })
 
 auth.get("/is-merchant", async (req, res) => {
-  const token = req.headers["authorization"].split(" ")[1]
+  const token = req.headers["authorization"]
+    ? req.headers["authorization"].split(" ")[1]
+    : null
   if (token) {
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET)
       const user = await Users.findOne({ _id: decoded.id })
       if (user.is_merchant) {
-        res.status(200).json({ is_merchant: decoded.is_merchant })
+        res.status(200).json({ is_merchant: user.is_merchant })
       } else {
         throw { message: "User is not merchant", status: 403 }
       }
@@ -190,8 +197,37 @@ auth.get("/is-merchant", async (req, res) => {
   }
 })
 
+auth.get("/is-customer", async (req, res) => {
+  const token = req.headers["authorization"]
+    ? req.headers["authorization"].split(" ")[1]
+    : null
+  if (token) {
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET)
+      const user = await Users.findOne({ _id: decoded.id })
+      if (user.is_customer) {
+        res.status(200).json({
+          is_customer: user.is_customer,
+          message: "User is customer",
+        })
+      } else {
+        res.status(200).json({
+          is_customer: user.is_customer,
+          message: "User is not customer",
+        })
+      }
+    } catch (err) {
+      res.status(500).json({ message: err.message })
+    }
+  } else {
+    res.status(401).json({ message: "Unauthorized" })
+  }
+})
+
 auth.get("/is-first-login", async (req, res) => {
-  const token = req.headers["authorization"].split(" ")[1]
+  const token = req.headers["authorization"]
+    ? req.headers["authorization"].split(" ")[1]
+    : null
   if (token) {
     try {
       const decoded = await authFunction.verifyToken(token)
@@ -220,7 +256,9 @@ auth.get("/is-first-login", async (req, res) => {
 })
 
 auth.put("/reset-password", async (req, res) => {
-  const token = req.headers["authorization"].split(" ")[1]
+  const token = req.headers["authorization"]
+    ? req.headers["authorization"].split(" ")[1]
+    : null
   if (token) {
     try {
       const decoded = await authFunction.verifyToken(token)
@@ -261,6 +299,55 @@ auth.put("/reset-password", async (req, res) => {
     }
   } else {
     res.status(401).json({ message: "Unauthorized" })
+  }
+})
+
+auth.post("/customer", async (req, res) => {
+  // Validate user input
+  const { username, email, password, fullname, phone_number, date_of_birth } =
+    req.body
+  if (
+    !username ||
+    !email ||
+    !password ||
+    !fullname ||
+    !phone_number ||
+    !date_of_birth
+  ) {
+    res.status(400).json({ message: "Invalid input" })
+  } else {
+    try {
+      // Check if user already exists
+      const checkUsername = await Users.findOne({ username: username })
+      const checkEmail = await Users.findOne({ email: email })
+
+      if (checkUsername || checkEmail) {
+        res.status(409).json({ message: "User already exists" })
+      } else {
+        // password before hash
+        const originalPassword = password
+        // hash password
+        const hashedPassword = await authFunction.hashPassword(password)
+
+        // Create new user
+        const newUser = new Users({
+          username: username,
+          email: email,
+          password: hashedPassword,
+          fullname: fullname,
+          phone_number: phone_number,
+          date_of_birth: date_of_birth,
+          is_ministry: false,
+          is_merchant: false,
+          is_customer: true,
+        })
+        // Save new user
+        const savedUser = await newUser.save()
+        await globalMailer.emailUserCreated(savedUser, res, originalPassword)
+      }
+    } catch (err) {
+      res.status(500).json({ message: err.message })
+    }
   }
 })
 module.exports = auth
