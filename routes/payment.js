@@ -291,7 +291,7 @@ payment.post("/invoice/:id/pay", async (req, res) => {
         brand_name: "PTS Merchant Payment",
         shipping_preference: "NO_SHIPPING",
         return_url: `${originFrom}/payment/invoice/${invoice._id}/capture`,
-        cancel_url: "https://example.com/cancel",
+        cancel_url: `${process.env.FE_HOST}/orders`,
       },
     }
 
@@ -358,7 +358,10 @@ payment.get("/invoice/:id/capture", async (req, res) => {
       response_stringify: JSON.stringify(jsonResponse),
     })
 
-    res.status(httpStatusCode).json({ jsonResponse, invoice: update_invoice })
+    // res.status(httpStatusCode).json({ jsonResponse, invoice: update_invoice })
+
+    // return to frontend
+    res.redirect(`${process.env.FE_HOST}/orders`)
   } catch (error) {
     console.error("Failed to capture order:", error.code ? error.code : error)
     res.status(500).json({ error: "Failed to capture order." })
@@ -373,16 +376,16 @@ payment.get("/invoice/:id/capture", async (req, res) => {
  * @throws Error
  **/
 payment.get("/invoice/:id", async (req, res) => {
+  const { id } = req.params
+  if (!id) {
+    return res.status(500).json({ message: "Invoice id is required" })
+  }
+
   try {
-    const { id } = req.params
-    if (!id) {
-      res.status(500).json({ message: "Invoice id is required" })
-      return false
-    }
     const invoice = await Invoice.findOne({ _id: id })
+    console.log(invoice)
     if (!invoice) {
-      res.status(500).json({ message: "Invoice not found" })
-      return false
+      return res.status(500).json({ message: "Invoice not found" })
     }
     const { jsonResponse, httpStatusCode } = await getOrders(
       invoice.response_code
@@ -390,6 +393,20 @@ payment.get("/invoice/:id", async (req, res) => {
     console.log(jsonResponse)
     res.status(httpStatusCode).json(jsonResponse)
   } catch (error) {
+    console.log(error.response.data)
+    if (error.response.data.details[0].issue === "INVALID_RESOURCE_ID") {
+      const update_invoice = await Invoice.findOneAndUpdate(
+        { _id: id },
+        {
+          status: "expired",
+        }
+      )
+      return res.status(500).json({
+        message: "Order was expired",
+        status: "expired",
+        details: "Your Payment link has been expired.",
+      })
+    }
     console.error("Failed to get order data:", error.code ? error.code : error)
     res.status(500).json({ error: "Failed to get order data." })
   }

@@ -9,6 +9,7 @@ const path = require("path")
 const Products = require("../models/products")
 const mongoose = require("mongoose")
 const ssTunel = require("../functions/routeFrom")
+const Invoice = require("../models/invoice")
 
 router.get("/", (req, res) => {
   res.send("Hello world")
@@ -285,6 +286,32 @@ router.get("/products/:id", async (req, res) => {
           as: "pictures",
         },
       },
+      {
+        $lookup: {
+          from: "reviews",
+          localField: "_id",
+          foreignField: "product_id",
+          as: "reviews",
+          pipeline: [
+            {
+              $lookup: {
+                from: "users",
+                localField: "customer_id",
+                foreignField: "_id",
+                as: "user",
+              },
+            },
+            {
+              $sort: { _order: -1 },
+            },
+          ],
+        },
+      },
+      {
+        $addFields: {
+          average_rating: { $avg: "$reviews.rating" },
+        },
+      },
     ])
 
     const originFrom = ssTunel.isFromTunnel(req.headers.origin)
@@ -297,4 +324,81 @@ router.get("/products/:id", async (req, res) => {
   }
 })
 
+router.get("/invoice/:id", async (req, res) => {
+  const { id } = req.params
+  if (!id) {
+    return res.status(400).json({ message: "Id was required." })
+  }
+  try {
+    const invoice = await Invoice.aggregate([
+      {
+        $match: {
+          _id: new mongoose.Types.ObjectId(id),
+        },
+      },
+      {
+        $addFields: {
+          payment_url: {
+            $concat: [
+              `https://www.sandbox.paypal.com/checkoutnow?token=`,
+              "$response_code",
+            ],
+          },
+        },
+      },
+      {
+        $lookup: {
+          from: "products",
+          localField: "product_id",
+          foreignField: "_id",
+          as: "product",
+
+          pipeline: [
+            {
+              $addFields: {
+                productIdString: { $toString: "$_id" },
+              },
+            },
+            {
+              $lookup: {
+                from: "product_pictures",
+                localField: "productIdString",
+                foreignField: "product_id",
+                as: "pictures",
+              },
+            },
+          ],
+        },
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "customer_id",
+          foreignField: "_id",
+          as: "user",
+        },
+      },
+      {
+        $lookup: {
+          from: "merchants",
+          localField: "merchant_id",
+          foreignField: "_id",
+          as: "merchant",
+        },
+      },
+    ])
+    const originFrom = ssTunel.isFromTunnel(req.headers.origin)
+    invoice[0].product.forEach((product) => {
+      product.pictures.forEach((picture) => {
+        picture.url = `${originFrom}${picture.url}`
+      })
+    })
+    console.log(invoice)
+    res.status(200).json(invoice[0])
+  } catch (error) {
+    console.log(error)
+    console.log("error", error.message ? error.message : error)
+    res.status(500).json({ message: "Internal server error" })
+  }
+})
 module.exports = router

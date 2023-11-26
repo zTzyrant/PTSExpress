@@ -493,7 +493,12 @@ merchant.get("/orders", async (req, res) => {
         const invoice = await Invoice.aggregate([
           {
             $match: {
-              merchant_id: decoded.merchant_id,
+              $and: [
+                {
+                  merchant_id: new mongoose.Types.ObjectId(decoded.merchant_id),
+                },
+                { status: "paid" },
+              ],
             },
           },
           {
@@ -507,12 +512,20 @@ merchant.get("/orders", async (req, res) => {
           {
             $lookup: {
               from: "users",
-              localField: "user_id",
+              localField: "customer_id",
               foreignField: "_id",
               as: "user",
             },
           },
+          {
+            $project: {
+              user: {
+                password: 0,
+              },
+            },
+          },
         ])
+        console.log(invoice)
 
         res.json(invoice)
       } else {

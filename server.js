@@ -24,12 +24,14 @@ const auth = require("./routes/auth")
 const ministry = require("./routes/ministry")
 const merchant = require("./routes/merchant")
 const payment = require("./routes/payment")
+const customer = require("./routes/customer")
 
 app.use("/api", route)
 app.use("/auth", auth)
 app.use("/ministry", ministry)
 app.use("/merchant", merchant)
 app.use("/payment", payment)
+app.use("/customer", customer)
 
 app.post("/test-ft", (req, res) => {
   console.log(req.body)

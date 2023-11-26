@@ -350,4 +350,5 @@ auth.post("/customer", async (req, res) => {
     }
   }
 })
+
 module.exports = auth
