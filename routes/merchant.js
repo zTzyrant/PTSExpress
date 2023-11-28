@@ -8,6 +8,7 @@ const picture_upload = require("../functions/picture_upload")
 const mongoose = require("mongoose")
 const ssTunel = require("../functions/routeFrom")
 const Invoice = require("../models/invoice")
+const Merchant = require("../models/merchant")
 
 merchant.get("/products", async (req, res) => {
   if (req.headers["authorization"]) {
@@ -41,7 +42,7 @@ merchant.get("/products", async (req, res) => {
         ])
         console.log(products)
         if (products.length === 0) {
-          res.status(404).json({ message: "Products not found" })
+          res.status(200).json({ products })
         } else {
           const originFrom = ssTunel.isFromTunnel(req.headers.origin)
 
@@ -538,4 +539,136 @@ merchant.get("/orders", async (req, res) => {
     res.status(401).json({ message: "Unauthorized" })
   }
 })
+
+merchant.get("/top_product", async (req, res) => {
+  const { limit } = req.query
+  if (req.headers["authorization"]) {
+    try {
+      const token = req.headers["authorization"].split(" ")[1]
+      const decoded = await authFunction.verifyToken(token)
+      const merchant = await Merchant.findById(decoded.merchant_id)
+      if (merchant && token) {
+        const topProducts = await Products.aggregate([
+          {
+            $match: merchant._id
+              ? { merchant_id: merchant._id.toString() }
+              : {},
+          },
+          {
+            $lookup: {
+              from: "invoices",
+              localField: "_id",
+              foreignField: "product_id",
+              as: "invoices",
+              pipeline: [
+                {
+                  $match: {
+                    status: "paid",
+                  },
+                },
+              ],
+            },
+          },
+          {
+            $project: {
+              _id: 1,
+              name: 1,
+              price: 1,
+              product_sold: { $size: "$invoices" },
+              amount_sold: { $multiply: ["$price", { $size: "$invoices" }] },
+            },
+          },
+          {
+            $sort: {
+              product_sold: -1,
+            },
+          },
+        ])
+        const products = limit ? topProducts.slice(0, limit) : topProducts
+        res.json(products)
+      } else {
+        return res.status(403).json({ message: "Forbidden not merchant" })
+      }
+    } catch (error) {
+      res.status(500).json({ message: error.message })
+    }
+  } else {
+    res.status(401).json({ message: "Unauthorized" })
+  }
+})
+
+merchant.get("/product/statistic", async (req, res) => {
+  if (req.headers["authorization"]) {
+    try {
+      const token = req.headers["authorization"].split(" ")[1]
+      const decoded = await authFunction.verifyToken(token)
+      const merchant = await Merchant.findById(decoded.merchant_id)
+      console.log(merchant._id)
+      if (merchant && token) {
+        const invoice = await Invoice.aggregate([
+          {
+            $match: {
+              $and: [{ merchant_id: merchant._id }, { status: "paid" }],
+            },
+          },
+        ])
+        const total_product = await Products.find({
+          merchant_id: merchant._id.toString(),
+        }).countDocuments()
+        const product = await Products.aggregate([
+          {
+            $match: {
+              merchant_id: merchant._id.toString(),
+            },
+          },
+          {
+            $lookup: {
+              from: "invoices",
+              localField: "_id",
+              foreignField: "product_id",
+              as: "invoices",
+              pipeline: [
+                {
+                  $match: {
+                    status: "paid",
+                  },
+                },
+              ],
+            },
+          },
+          {
+            $project: {
+              _id: 1,
+              name: 1,
+              price: 1,
+              product_sold: { $size: "$invoices" },
+              amount_sold: { $multiply: ["$price", { $size: "$invoices" }] },
+            },
+          },
+          {
+            $sort: {
+              product_sold: -1,
+            },
+          },
+        ])
+
+        const top_product = product.length >= 1 ? product[0].name : null
+        const total_sold = invoice.length
+        const total_amount = invoice
+          .map((item) => item.amount_myr)
+          .reduce((a, b) => a + b, 0)
+        console.log(total_sold, total_amount)
+        res
+          .status(200)
+          .json({ total_sold, total_amount, total_product, top_product })
+      }
+    } catch (error) {
+      console.log(error)
+      res.status(500).json({ message: error.message })
+    }
+  } else {
+    res.status(401).json({ message: "Unauthorized" })
+  }
+})
+
 module.exports = merchant

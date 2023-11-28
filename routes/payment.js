@@ -343,6 +343,10 @@ payment.get("/invoice/:id/capture", async (req, res) => {
     }
     console.log(isApproveOrder.jsonResponse)
 
+    if (isApproveOrder.jsonResponse.status === "COMPLETED") {
+      return res.redirect(`${process.env.FE_HOST}/orders`)
+    }
+
     if (isApproveOrder.jsonResponse.status !== "APPROVED") {
       res.status(500).json({ message: "Order not approved" })
       return false

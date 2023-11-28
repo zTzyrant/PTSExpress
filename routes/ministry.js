@@ -5,6 +5,8 @@ const Users = require("../models/users")
 const Merchant = require("../models/merchant")
 const authFunction = require("../functions/authFunction")
 const merchaantMail = require("../mails/merchantMailer")
+const Product = require("../models/products")
+const ProductCategories = require("../models/product_categories")
 
 ministry.use("/", (req, res, next) => {
   console.log("Time:", Date.now())
@@ -150,4 +152,104 @@ ministry.put("/reset-password/merchant/:id", async (req, res) => {
     res.status(403).json({ message: "Forbidden" })
   }
 })
+
+ministry.get("/merchant/analytics", async (req, res) => {
+  if (req.headers["authorization"]) {
+    try {
+      const token = req.headers["authorization"].split(" ")[1]
+      const decoded = await authFunction.verifyToken(token)
+
+      if (decoded.is_ministry) {
+        const merchantCount = await Merchant.countDocuments()
+        const pendingMerchant = await Merchant.countDocuments({
+          status: "pending",
+        })
+        const approvedMerchant = await Merchant.countDocuments({
+          status: "approved",
+        })
+        const rejectedMerchant = await Merchant.countDocuments({
+          status: "rejected",
+        })
+
+        res.status(200).json({
+          merchantCount,
+          pendingMerchant,
+          approvedMerchant,
+          rejectedMerchant,
+        })
+      } else {
+        res.status(403).json({ message: "Forbidden not ministry" })
+      }
+    } catch (err) {
+      res.status(500).json({ message: err.message })
+    }
+  } else {
+    res.status(403).json({ message: "Forbidden" })
+  }
+})
+
+ministry.get("/merchant/top_product", async (req, res) => {
+  const { merchant_id, limit } = req.query
+  console.log(merchant_id)
+  try {
+    let topProduct = await Product.aggregate([
+      {
+        $match: merchant_id ? { merchant_id: merchant_id } : {},
+      },
+      {
+        $lookup: {
+          from: "invoices",
+          localField: "_id",
+          foreignField: "product_id",
+          as: "invoices",
+          pipeline: [
+            {
+              $match: {
+                status: "paid",
+              },
+            },
+          ],
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          name: 1,
+          price: 1,
+          product_sold: { $size: "$invoices" },
+          amount_sold: { $multiply: ["$price", { $size: "$invoices" }] },
+        },
+      },
+      {
+        $sort: {
+          product_sold: -1,
+        },
+      },
+    ])
+    topProduct = limit ? topProduct.slice(0, limit) : topProduct
+    res.status(200).json(topProduct)
+  } catch (err) {
+    res.status(500).json({ message: err.message })
+  }
+})
+
+ministry.get("/merchant/approved", async (req, res) => {
+  try {
+    const merchant = await Merchant.aggregate([
+      {
+        $match: { status: "approved" },
+      },
+      {
+        $project: {
+          _id: 1,
+          company_name: 1,
+        },
+      },
+    ])
+    res.status(200).json(merchant)
+  } catch (err) {
+    res.status(500).json({ message: err.message })
+  }
+})
+
 module.exports = ministry
