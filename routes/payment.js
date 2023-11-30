@@ -291,7 +291,7 @@ payment.post("/invoice/:id/pay", async (req, res) => {
         brand_name: "PTS Merchant Payment",
         shipping_preference: "NO_SHIPPING",
         return_url: `${originFrom}/payment/invoice/${invoice._id}/capture`,
-        cancel_url: `${process.env.FE_HOST}/orders`,
+        cancel_url: `${originFrom}/orders`,
       },
     }
 
@@ -395,6 +395,13 @@ payment.get("/invoice/:id", async (req, res) => {
       invoice.response_code
     )
     console.log(jsonResponse)
+    if (jsonResponse.status === "APPROVED") {
+      return res.status(200).json({
+        message: "Order approved",
+        status: "approved",
+        details: "Your Payment link has been approved.",
+      })
+    }
     res.status(httpStatusCode).json(jsonResponse)
   } catch (error) {
     console.log(error.response.data)
