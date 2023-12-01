@@ -259,7 +259,7 @@ merchant.put("/products/:id/picture/upload", merchantAuth, async (req, res) => {
 })
 
 // this end point only delete one picture
-merchant.delete("/products/:id/picture/", async (req, res) => {
+merchant.delete("/products/:id/picture", merchantAuth, async (req, res) => {
   try {
     const decoded = req.user
     const product = await Products.findById(req.params.id)
