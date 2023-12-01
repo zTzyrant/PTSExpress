@@ -5,6 +5,8 @@ const port = 3000
 const host = "0.0.0.0"
 const mongoose = require("mongoose")
 const cors = require("cors")
+const { deleteUnregisteredImages } = require("./functions/deleteFiles")
+const cron = require("node-cron")
 
 mongoose.connect(process.env.DATABABE_URL)
 const db = mongoose.connection
@@ -18,6 +20,16 @@ app.use(express.urlencoded({ extended: true }))
 
 const uploadsDir = require("path").join(__dirname, "uploads")
 app.use("/uploads", express.static(uploadsDir))
+
+// Run cron job every Sunday at 00:00 for deleting unregistered images or files
+cron.schedule("0 0 * * 0", () => {
+  console.log(
+    `Running cron job at ${new Date().toLocaleString("id-ID", {
+      timeZone: "Asia/Makassar",
+    })}`
+  )
+  deleteUnregisteredImages()
+})
 
 const route = require("./routes/route")
 const auth = require("./routes/auth")
