@@ -1,12 +1,9 @@
 const formidable = require("formidable")
 const mv = require("mv")
 const path = require("path")
-const fs = require("fs-extra")
 
 // handle form data from request
 const handleFormData = async (req) => {
-  // remove all files in temp/uploads
-  await fs.emptyDir(path.join(__dirname, "../temp/uploads"))
   const form_data = new formidable.IncomingForm({
     multiples: true,
     uploadDir: path.join(__dirname, "../temp/uploads"),

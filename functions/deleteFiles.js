@@ -53,4 +53,20 @@ const deleteUnregisteredImages = async () => {
   }
 }
 
-module.exports = { deleteUnregisteredImages }
+const clearTempUploads = async () => {
+  try {
+    const tempUploadsDir = path.join(__dirname, "../temp/uploads")
+    const allFiles = await fs.readdir(tempUploadsDir)
+    if (allFiles.length === 0) {
+      console.log("No files found in temp uploads directory.")
+      return
+    }
+    console.log("Start deleting temp uploads...")
+    await fs.emptyDir(tempUploadsDir)
+    console.log("Cleanup completed successfully.")
+  } catch (error) {
+    console.error("Error during cleanup:", error)
+  }
+}
+
+module.exports = { deleteUnregisteredImages, clearTempUploads }
