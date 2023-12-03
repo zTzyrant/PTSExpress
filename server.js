@@ -11,6 +11,8 @@ const {
 } = require("./functions/deleteFiles")
 const cron = require("node-cron")
 
+console.log("process.env.NODE_ENV:", process.env.NODE_ENV)
+
 mongoose.connect(process.env.DATABABE_URL)
 const db = mongoose.connection
 
