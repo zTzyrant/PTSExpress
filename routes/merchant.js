@@ -1,7 +1,6 @@
 require("dotenv").config()
 const express = require("express")
 const merchant = express.Router()
-const authFunction = require("../functions/authFunction")
 const Products = require("../models/products")
 const Product_Pictures = require("../models/product_pictures")
 const picture_upload = require("../functions/picture_upload")
@@ -11,6 +10,12 @@ const Invoice = require("../models/invoice")
 const Merchant = require("../models/merchant")
 const { merchantAuth } = require("../middleware/merchantAuth")
 
+/**
+ * @function validateProduct
+ * @param {Object} req
+ * @returns {Object} message
+ * @description validate product from request body
+ */
 validateProduct = (req) => {
   switch (true) {
     case !req.body.name:
@@ -42,6 +47,12 @@ validateProduct = (req) => {
   }
 }
 
+/**
+ * @function deletePictures
+ * @param {Array} pictures
+ * @returns {Object} message
+ * @description delete pictures from database by id
+ */
 const deletePictures = async (pictures) => {
   try {
     await Product_Pictures.deleteMany({ _id: { $in: pictures } })
@@ -50,6 +61,13 @@ const deletePictures = async (pictures) => {
   }
 }
 
+/**
+ * @path /merchant/
+ * @method GET
+ * @description get merchant server status
+ * @middleware merchantAuth
+ * @returns {Object} message
+ */
 merchant.get("/", merchantAuth, async (req, res) => {
   console.log("Time:", Date.now())
   res.status(200).json({
@@ -59,6 +77,13 @@ merchant.get("/", merchantAuth, async (req, res) => {
   })
 })
 
+/**
+ * @path /merchant/products
+ * @method GET
+ * @description get all products by merchant id
+ * @middleware merchantAuth
+ * @returns {Object} products
+ */
 merchant.get("/products", merchantAuth, async (req, res) => {
   try {
     const decoded = req.user
@@ -104,6 +129,13 @@ merchant.get("/products", merchantAuth, async (req, res) => {
   }
 })
 
+/**
+ * @path /merchant/products/:id
+ * @method GET
+ * @description get product by id
+ * @middleware merchantAuth
+ * @returns {Object} product
+ */
 merchant.get("/products/:id", merchantAuth, async (req, res) => {
   try {
     const decoded = req.user
@@ -152,6 +184,13 @@ merchant.get("/products/:id", merchantAuth, async (req, res) => {
   }
 })
 
+/**
+ * @path /merchant/products
+ * @method POST
+ * @description create new product
+ * @middleware merchantAuth
+ * @returns {Object} product
+ */
 merchant.post("/products", merchantAuth, async (req, res) => {
   if (validateProduct(req)) return res.status(400).json(validateProduct(req))
 
@@ -206,6 +245,13 @@ merchant.post("/products", merchantAuth, async (req, res) => {
   }
 })
 
+/**
+ * @path /merchant/products/:id/picture/upload
+ * @method PUT
+ * @description upload product pictures
+ * @middleware merchantAuth
+ * @returns {Object} productPictures
+ */
 merchant.put("/products/:id/picture/upload", merchantAuth, async (req, res) => {
   try {
     const decoded = req.user
@@ -301,6 +347,13 @@ merchant.patch(
   }
 )
 
+/**
+ * @path /merchant/products/:id/picture
+ * @method GET
+ * @description get product pictures by product id
+ * @middleware merchantAuth
+ * @returns {Object} productPictures
+ */
 merchant.get("/products/:id/picture", merchantAuth, async (req, res) => {
   try {
     const decoded = req.user
@@ -318,6 +371,13 @@ merchant.get("/products/:id/picture", merchantAuth, async (req, res) => {
   }
 })
 
+/**
+ * @path /merchant/products/:id
+ * @method PUT
+ * @description update product by id
+ * @middleware merchantAuth
+ * @returns {Object} product
+ */
 merchant.put("/products/:id", merchantAuth, async (req, res) => {
   if (validateProduct(req)) return res.status(400).json(validateProduct(req))
 
@@ -382,6 +442,12 @@ merchant.put("/products/:id", merchantAuth, async (req, res) => {
   }
 })
 
+/**
+ * @path /merchant/products/:id
+ * @method DELETE
+ * @description delete product by id
+ * @middleware merchantAuth
+ */
 merchant.delete("/products/:id", merchantAuth, async (req, res) => {
   try {
     const decoded = req.user
@@ -398,6 +464,13 @@ merchant.delete("/products/:id", merchantAuth, async (req, res) => {
   }
 })
 
+/**
+ * @path /merchant/orders
+ * @method GET
+ * @description get all orders by merchant id
+ * @middleware merchantAuth
+ * @returns {Object} orders
+ */
 merchant.get("/orders", merchantAuth, async (req, res) => {
   try {
     const decoded = req.user
@@ -444,6 +517,13 @@ merchant.get("/orders", merchantAuth, async (req, res) => {
   }
 })
 
+/**
+ * @path /merchant/top_product
+ * @method GET
+ * @description get top product by merchant id
+ * @middleware merchantAuth
+ * @returns {Object} topProducts
+ */
 merchant.get("/top_product", merchantAuth, async (req, res) => {
   const { limit } = req.query
   try {
@@ -494,6 +574,13 @@ merchant.get("/top_product", merchantAuth, async (req, res) => {
   }
 })
 
+/**
+ * @path /merchant/product/statistic
+ * @method GET
+ * @description get product statistic by merchant id
+ * @middleware merchantAuth
+ * @returns {Object} statistic
+ */
 merchant.get("/product/statistic", merchantAuth, async (req, res) => {
   try {
     const decoded = req.user
