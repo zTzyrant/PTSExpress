@@ -107,7 +107,7 @@ merchant.get("/products", merchantAuth, async (req, res) => {
 merchant.get("/products/:id", merchantAuth, async (req, res) => {
   try {
     const decoded = req.user
-    console.log(decoded.merchant_id)
+    console.log("Merchant id:", decoded.merchant_id)
     const product = await Products.aggregate([
       // Match products by merchant_id
       {
@@ -343,8 +343,8 @@ merchant.put("/products/:id", merchantAuth, async (req, res) => {
   try {
     const decoded = req.user
     const product = await Products.findById(req.params.id)
-    console.log(product.merchant_id)
-    console.log(decoded.merchant_id)
+    console.log("merchant id (product):", product.merchant_id)
+    console.log("merchant id (decoded):", decoded.merchant_id)
     if (product.merchant_id !== decoded.merchant_id) {
       return res.status(403).json({ message: "Forbidden not your product" })
     }
@@ -495,76 +495,73 @@ merchant.get("/top_product", merchantAuth, async (req, res) => {
 })
 
 merchant.get("/product/statistic", merchantAuth, async (req, res) => {
-  if (req.headers["authorization"]) {
-    try {
-      const token = req.headers["authorization"].split(" ")[1]
-      const decoded = await authFunction.verifyToken(token)
-      const merchant = await Merchant.findById(decoded.merchant_id)
-      console.log(merchant._id)
-      if (merchant && token) {
-        const invoice = await Invoice.aggregate([
-          {
-            $match: {
-              $and: [{ merchant_id: merchant._id }, { status: "paid" }],
-            },
+  try {
+    const decoded = req.user
+    const merchant = await Merchant.findById(decoded.merchant_id)
+    if (merchant && decoded) {
+      const invoice = await Invoice.aggregate([
+        {
+          $match: {
+            $and: [{ merchant_id: merchant._id }, { status: "paid" }],
           },
-        ])
-        const total_product = await Products.find({
-          merchant_id: merchant._id.toString(),
-        }).countDocuments()
-        const product = await Products.aggregate([
-          {
-            $match: {
-              merchant_id: merchant._id.toString(),
-            },
+        },
+      ])
+      const total_product = await Products.find({
+        merchant_id: merchant._id.toString(),
+      }).countDocuments()
+      const product = await Products.aggregate([
+        {
+          $match: {
+            merchant_id: merchant._id.toString(),
           },
-          {
-            $lookup: {
-              from: "invoices",
-              localField: "_id",
-              foreignField: "product_id",
-              as: "invoices",
-              pipeline: [
-                {
-                  $match: {
-                    status: "paid",
-                  },
+        },
+        {
+          $lookup: {
+            from: "invoices",
+            localField: "_id",
+            foreignField: "product_id",
+            as: "invoices",
+            pipeline: [
+              {
+                $match: {
+                  status: "paid",
                 },
-              ],
-            },
+              },
+            ],
           },
-          {
-            $project: {
-              _id: 1,
-              name: 1,
-              price: 1,
-              product_sold: { $size: "$invoices" },
-              amount_sold: { $multiply: ["$price", { $size: "$invoices" }] },
-            },
+        },
+        {
+          $project: {
+            _id: 1,
+            name: 1,
+            price: 1,
+            product_sold: { $size: "$invoices" },
+            amount_sold: { $multiply: ["$price", { $size: "$invoices" }] },
           },
-          {
-            $sort: {
-              product_sold: -1,
-            },
+        },
+        {
+          $sort: {
+            product_sold: -1,
           },
-        ])
+        },
+      ])
 
-        const top_product = product.length >= 1 ? product[0].name : null
-        const total_sold = invoice.length
-        const total_amount = invoice
-          .map((item) => item.amount_myr)
-          .reduce((a, b) => a + b, 0)
-        console.log(total_sold, total_amount)
-        res
-          .status(200)
-          .json({ total_sold, total_amount, total_product, top_product })
-      }
-    } catch (error) {
-      console.log(error)
-      res.status(500).json({ message: error.message })
+      const top_product = product.length >= 1 ? product[0].name : null
+      const total_sold = invoice.length
+      const total_amount = invoice
+        .map((item) => item.amount_myr)
+        .reduce((a, b) => a + b, 0)
+      console.log("total sold:", total_sold)
+      console.log("total amount:", total_amount)
+      res
+        .status(200)
+        .json({ total_sold, total_amount, total_product, top_product })
+    } else {
+      return res.status(404).json({ message: "Merchant not found" })
     }
-  } else {
-    res.status(401).json({ message: "Unauthorized" })
+  } catch (error) {
+    console.log(error)
+    res.status(500).json({ message: error.message })
   }
 })
 

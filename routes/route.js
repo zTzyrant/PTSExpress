@@ -35,6 +35,7 @@ const cleanTempUploads = (files) => {
   })
 }
 
+// test route
 router.get("/", (req, res) => {
   res.send("Hello world")
 })
@@ -42,7 +43,14 @@ router.get("/", (req, res) => {
 // get all users for testing
 router.get("/users", async (req, res) => {
   try {
-    const users = await Users.find()
+    const users = await Users.aggregate([
+      {
+        $project: {
+          username: 1,
+          fullname: 1,
+        },
+      },
+    ])
     res.status(200).json(users)
   } catch (err) {
     res.status(500).json({ message: err.message })
@@ -52,7 +60,7 @@ router.get("/users", async (req, res) => {
 // get user by id for testing
 router.get("/users/:id", async (req, res) => {
   try {
-    const users = await Users.find({ _id: req.params.id })
+    const users = await Users.find({ _id: req.params.id }).select("-password")
     res.status(200).json(users)
   } catch (err) {
     res.status(500).json({ message: err.message })
@@ -254,7 +262,7 @@ router.post("/merchant", async (req, res) => {
       })
 
       const document = await Promise.all(mvDocument)
-      console.log("Document:", document)
+      console.log(`Document: ${document.length} files`)
 
       const merchant = new Merchant({
         company_name: company_name[0],

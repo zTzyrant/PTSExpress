@@ -56,7 +56,6 @@ auth.get("/user/profile", async (req, res) => {
   const token = req.headers["authorization"]
     ? req.headers["authorization"].split(" ")[1]
     : null
-  console.log(token)
   if (token) {
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET)
@@ -303,51 +302,62 @@ auth.put("/reset-password", async (req, res) => {
 })
 
 auth.post("/customer", async (req, res) => {
-  // Validate user input
-  const { username, email, password, fullname, phone_number, date_of_birth } =
-    req.body
-  if (
-    !username ||
-    !email ||
-    !password ||
-    !fullname ||
-    !phone_number ||
-    !date_of_birth
-  ) {
-    res.status(400).json({ message: "Invalid input" })
-  } else {
-    try {
-      // Check if user already exists
-      const checkUsername = await Users.findOne({ username: username })
-      const checkEmail = await Users.findOne({ email: email })
-
-      if (checkUsername || checkEmail) {
-        res.status(409).json({ message: "User already exists" })
-      } else {
-        // password before hash
-        const originalPassword = password
-        // hash password
-        const hashedPassword = await authFunction.hashPassword(password)
-
-        // Create new user
-        const newUser = new Users({
-          username: username,
-          email: email,
-          password: hashedPassword,
-          fullname: fullname,
-          phone_number: phone_number,
-          date_of_birth: date_of_birth,
-          is_ministry: false,
-          is_merchant: false,
-          is_customer: true,
-        })
-        // Save new user
-        const savedUser = await newUser.save()
-        await globalMailer.emailUserCreated(savedUser, res, originalPassword)
-      }
-    } catch (err) {
-      res.status(500).json({ message: err.message })
+  try {
+    // Validate user input
+    const { username, email, password, fullname, phone_number, date_of_birth } =
+      req.body
+    if (
+      !username ||
+      !email ||
+      !password ||
+      !fullname ||
+      !phone_number ||
+      !date_of_birth
+    ) {
+      return res.status(400).json({ message: "Invalid input" })
     }
+
+    if (!username.match(/^[a-zA-Z0-9]+$/)) {
+      return res.status(400).json({ message: "Invalid username" })
+    }
+
+    if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+      return res.status(400).json({ message: "Invalid email" })
+    }
+
+    if (!phone_number.match(/^[0-9]+$/)) {
+      return res.status(400).json({ message: "Invalid phone number" })
+    }
+
+    // Check if user already exists
+    const checkUsername = await Users.findOne({ username: username })
+    const checkEmail = await Users.findOne({ email: email })
+
+    if (checkUsername || checkEmail) {
+      return res.status(409).json({ message: "User already exists" })
+    }
+    // password before hash
+    const originalPassword = password
+    // hash password
+    const hashedPassword = await authFunction.hashPassword(password)
+
+    // Create new user
+    const newUser = new Users({
+      username: username,
+      email: email,
+      password: hashedPassword,
+      fullname: fullname,
+      phone_number: phone_number,
+      date_of_birth: date_of_birth,
+      is_ministry: false,
+      is_merchant: false,
+      is_customer: true,
+    })
+    // Save new user
+    const savedUser = await newUser.save()
+    await globalMailer.emailUserCreated(savedUser, res, originalPassword)
+  } catch (err) {
+    res.status(500).json({ message: err.message })
   }
 })
 

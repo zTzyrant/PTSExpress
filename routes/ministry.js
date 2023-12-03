@@ -177,7 +177,7 @@ ministry.get("/merchant/analytics", ministryAuth, async (req, res) => {
 
 ministry.get("/merchant/top_product", ministryAuth, async (req, res) => {
   const { merchant_id, limit } = req.query
-  console.log(merchant_id)
+  console.log(`merchant_id: ${merchant_id} from /ministry/merchant/top_product`)
   try {
     let topProduct = await Product.aggregate([
       {
