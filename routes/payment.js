@@ -9,6 +9,7 @@ const axios = require("axios")
 const exchange = require("../functions/ratesExchange")
 const Invoice = require("../models/invoice")
 const ssTunel = require("../functions/routeFrom")
+const { customerAuth } = require("../middleware/customerAuth")
 
 /**
  * Generate an OAuth 2.0 access token for authenticating with PayPal REST APIs.
@@ -106,59 +107,11 @@ async function handleResponse(response) {
   }
 }
 
-payment.use("/getAccess", async (req, res, next) => {
-  try {
-    const errorr = await createOrder()
-    res.status(200).json({ message: "success" })
-  } catch (error) {
-    console.error("Failed to create order:", error.code ? error.code : error)
-    res.status(500).json({ error: "Failed to capture order." })
-  }
-})
-
-payment.use("/", async (req, res, next) => {
-  if (req.method === "POST") {
-    if (req.headers["authorization"]) {
-      try {
-        const token = req.headers["authorization"].split(" ")[1]
-        const decoded = await authFunction.verifyToken(token)
-        if (decoded) {
-          const customer = await Users.findOne({
-            _id: decoded.id,
-          })
-          console.log(customer)
-          if (customer && customer.is_customer) {
-            next()
-          } else {
-            throw {
-              message: `You are not authorized to access this route`,
-              status: false,
-            }
-          }
-        } else {
-          throw {
-            message: `Invalid token`,
-            status: false,
-          }
-        }
-      } catch (err) {
-        res.status(500).json({
-          message: err.message,
-        })
-      }
-    } else {
-      res.status(401).json({ message: "Unauthorized" })
-    }
-  } else {
-    next()
-  }
-})
-
 payment.get("/", (req, res) => {
   res.status(200).json({ message: "success" })
 })
 
-payment.post("/invoice", async (req, res) => {
+payment.post("/invoice", customerAuth, async (req, res) => {
   const { date_travel, number_of_guest, note, product_id } = req.body
   if (!date_travel) {
     res.status(500).json({ message: "Date travel is required" })
@@ -178,86 +131,98 @@ payment.post("/invoice", async (req, res) => {
   }
 
   try {
-    const token = req.headers["authorization"].split(" ")[1]
-    const decoded = await authFunction.verifyToken(token)
+    const decoded = req.user
     const customer = await Users.findOne({
       _id: decoded.id,
     })
-    console.log(product_id)
+
+    // check if product exist
     const products = await Products.findOne({ _id: product_id })
+
+    // if number_of_guest more than products.number_of_guests throw error
     if (products && products.number_of_guests <= !number_of_guest) {
       throw {
         message: `Number of guest must be less than or equal to ${products.number_of_guests}`,
         status: false,
       }
     }
+
+    // check if merchant owner of product
     const merchant = await Merchant.findOne({ _id: products.merchant_id })
-    if (products && merchant) {
-      const { amount_usd, amount_myr, rate_myr } = await exchange.ratesExchange(
-        products.price
-      )
-      const invoice = await Invoice.create({
-        // invoice
-        date_travel,
-        number_of_guest,
-        note,
-
-        // amount
-        amount_usd,
-        amount_myr,
-        rate: rate_myr,
-
-        //
-        status: "pending",
-        response_code: null,
-        response_stringify: null,
-
-        // Foreign key but not referenced
-        customer_id: customer._id,
-        merchant_id: merchant._id,
-        product_id: products._id,
-      })
-      if (Invoice) {
-        res
-          .status(200)
-          .json({ message: "success create order in database", invoice })
-      } else {
-        throw {
-          message: `Failed to create invoice`,
-          status: false,
-        }
-      }
-    } else {
+    if (!products && !merchant) {
       throw {
         message: `Product not found`,
         status: false,
       }
     }
+    // exchange rates from myr to usd
+    const { amount_usd, amount_myr, rate_myr } = await exchange.ratesExchange(
+      products.price
+    )
+
+    // create invoice in database before create order in paypal
+    console.log("Create invoice:", products._id)
+    const invoice = await Invoice.create({
+      // invoice
+      date_travel,
+      number_of_guest,
+      note,
+
+      // amount
+      amount_usd,
+      amount_myr,
+      rate: rate_myr,
+
+      // status
+      status: "pending",
+      response_code: null,
+      response_stringify: null,
+
+      // Foreign key but not referenced
+      customer_id: customer._id,
+      merchant_id: merchant._id,
+      product_id: products._id,
+    })
+
+    // if invoice not created throw error
+    if (!invoice) {
+      throw {
+        message: `Failed to create invoice`,
+        status: false,
+      }
+    }
+    res
+      .status(200)
+      .json({ message: "success create order in database", invoice })
   } catch (err) {
     res.status(500).json({ message: err.message })
   }
 })
 
-payment.post("/invoice/:id/pay", async (req, res) => {
-  const { id } = req.params
-  if (!id) {
-    res.status(500).json({ message: "Invoice id is required" })
-    return false
-  }
-
+payment.post("/invoice/:id/pay", customerAuth, async (req, res) => {
   try {
+    console.log("Try to generate payment...")
+    const { id } = req.params
+
+    if (!id) {
+      console.log("Invoice id is required")
+      return res.status(500).json({ message: "Invoice id is required" })
+    }
+
     const invoice = await Invoice.findOne({ _id: id })
     if (!invoice) {
-      res.status(500).json({ message: "Invoice not found" })
-      return false
+      console.log("Invoice not found")
+      return res.status(500).json({ message: "Invoice not found" })
     }
+
     const products = await Products.findOne({ _id: invoice.product_id })
     if (!products) {
-      res.status(500).json({ message: "Product not found" })
-      return false
+      console.log("Product not found")
+      return res.status(500).json({ message: "Product not found" })
     }
 
     const originFrom = ssTunel.isFromTunnel(req.headers.origin)
+
     const payment_body = {
       intent: "CAPTURE",
       purchase_units: [
@@ -296,17 +261,18 @@ payment.post("/invoice/:id/pay", async (req, res) => {
     }
 
     const { jsonResponse, httpStatusCode } = await createOrder(payment_body)
-    console.log(httpStatusCode)
-    const update_invoice = await Invoice.findOneAndUpdate(invoice._id, {
-      status: "unpaid",
-      response_code: jsonResponse.id,
-      response_stringify: JSON.stringify(jsonResponse),
-    })
 
-    const new_invoice = await Invoice.findOne({ _id: invoice._id })
+    const new_invoice = await Invoice.findOneAndUpdate(
+      { _id: invoice._id },
+      {
+        status: "unpaid",
+        response_code: jsonResponse.id,
+        response_stringify: JSON.stringify(jsonResponse),
+      }
+    )
 
     res.status(httpStatusCode).json({
-      message: "success create order payment in paypal",
+      message: "Success create order payment in PayPal",
       payment: jsonResponse,
       invoice: new_invoice,
       payment_url: `https://www.sandbox.paypal.com/checkoutnow?token=${jsonResponse.id}`,
@@ -326,49 +292,57 @@ payment.post("/invoice/:id/pay", async (req, res) => {
  **/
 payment.get("/invoice/:id/capture", async (req, res) => {
   try {
-    const { id } = req.params
-    if (!id) {
-      res.status(500).json({ message: "Invoice id is required" })
-      return false
-    }
-    const invoice = await Invoice.findOne({ _id: id })
-    if (!invoice) {
-      res.status(500).json({ message: "Invoice not found" })
-      return false
-    }
-    const isApproveOrder = await getOrders(invoice.response_code)
-    if (!isApproveOrder) {
-      res.status(500).json({ message: "Order not found" })
-      return false
-    }
-    console.log(isApproveOrder.jsonResponse)
+    console.log("Trying to capture the payment...")
 
-    if (isApproveOrder.jsonResponse.status === "COMPLETED") {
+    const { id } = req.params
+
+    if (!id) {
+      return res.status(500).json({ message: "Invoice id is required" })
+    }
+
+    const invoice = await Invoice.findOne({ _id: id })
+
+    if (!invoice) {
+      return res.status(500).json({ message: "Invoice not found" })
+    }
+
+    const orderDetails = await getOrders(invoice.response_code)
+
+    if (!orderDetails) {
+      return res.status(500).json({ message: "Order not found" })
+    }
+
+    console.log("Order details:", orderDetails.jsonResponse)
+
+    if (orderDetails.jsonResponse.status === "COMPLETED") {
       return res.redirect(`${process.env.FE_HOST}/orders`)
     }
 
-    if (isApproveOrder.jsonResponse.status !== "APPROVED") {
-      res.status(500).json({ message: "Order not approved" })
-      return false
+    if (orderDetails.jsonResponse.status !== "APPROVED") {
+      return res.status(500).json({ message: "Order not approved" })
     }
 
     const { jsonResponse, httpStatusCode } = await captureOrder(
       invoice.response_code
     )
 
-    const update_invoice = await Invoice.findOneAndUpdate(invoice._id, {
-      status: "paid",
-      response_code: jsonResponse.id,
-      response_stringify: JSON.stringify(jsonResponse),
-    })
+    await Invoice.findOneAndUpdate(
+      { _id: invoice._id },
+      {
+        status: "paid",
+        response_code: jsonResponse.id,
+        response_stringify: JSON.stringify(jsonResponse),
+      }
+    )
 
-    // res.status(httpStatusCode).json({ jsonResponse, invoice: update_invoice })
+    // if user agent not from browser
+    // res.status(httpStatusCode).json({ jsonResponse, invoice: updatedInvoice });
 
     // return to frontend
-    res.redirect(`${process.env.FE_HOST}/orders`)
+    return res.redirect(`${process.env.FE_HOST}/orders`)
   } catch (error) {
     console.error("Failed to capture order:", error.code ? error.code : error)
-    res.status(500).json({ error: "Failed to capture order." })
+    return res.status(500).json({ error: "Failed to capture order." })
   }
 })
 
@@ -421,6 +395,29 @@ payment.get("/invoice/:id", async (req, res) => {
     console.error("Failed to get order data:", error.code ? error.code : error)
     res.status(500).json({ error: "Failed to get order data." })
   }
+})
+
+payment.delete("/invoice/:id", customerAuth, async (req, res) => {
+  try {
+    const { id } = req.params
+    console.log("Delete invoice:", id)
+    if (!id) {
+      return res.status(500).json({ message: "Invoice id is required" })
+    }
+
+    const decoded = req.user
+    const invoice = await Invoice.findOne({ _id: id, customer_id: decoded.id })
+    if (!invoice) {
+      return res.status(500).json({ message: "Invoice not found" })
+    }
+
+    if (invoice.status === "paid") {
+      return res.status(500).json({ message: "Invoice already paid" })
+    }
+
+    await invoice.deleteOne()
+    return res.status(200).json({ message: "success delete invoice" })
+  } catch (error) {}
 })
 
 module.exports = payment
