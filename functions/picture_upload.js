@@ -26,6 +26,7 @@ const uploadPicture = async (files) => {
       const filename = `${Date.now()}-${picture.originalFilename}`
       const oldpath = picture.filepath
       const newpath = path.join(__dirname, "../uploads", filename)
+      // using mv to move file from temp uploads to uploads folder
       mv(oldpath, newpath, (err) => {
         if (err) throw err
       })

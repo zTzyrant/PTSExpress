@@ -1,11 +1,20 @@
+require("dotenv").config()
+/**
+ * @param {*} origin
+ * @returns string {BE_HOST or BE_TUNNEL}
+ * @description check if request is from tunnel or not and return the correct host
+ * @description if production, return BE_HOST only
+ */
 const isFromTunnel = (origin) => {
-  console.log(origin)
-  if (origin === "https://q06n1njk-4200.asse.devtunnels.ms") {
-    return "https://q06n1njk-3000.asse.devtunnels.ms"
+  console.log("Request from: ", origin)
+  console.log("production: ", process.env.NODE_ENV === "production")
+  if (process.env.NODE_ENV === "production") {
+    return process.env.BE_HOST
+  }
+  if (origin === process.env.FE_TUNNEL) {
+    return process.env.BE_TUNNEL
   } else {
-    return "http://localhost:3000" // your localhost
-    // return "http://192.168.18.14:3000" // your local ip
-    // return "https://q06n1njk-3000.asse.devtunnels.ms"
+    return process.env.BE_HOST
   }
 }
 

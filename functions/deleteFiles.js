@@ -3,6 +3,7 @@ const path = require("path")
 const Product_Pictures = require("../models/product_pictures")
 const Merchant = require("../models/merchant")
 
+// Delete all files in the uploads directory that are not registered in the database
 const deleteUnregisteredImages = async () => {
   try {
     // Retrieve all registered filenames from the database
@@ -53,6 +54,7 @@ const deleteUnregisteredImages = async () => {
   }
 }
 
+// Delete all files in the temp uploads directory
 const clearTempUploads = async () => {
   try {
     const tempUploadsDir = path.join(__dirname, "../temp/uploads")

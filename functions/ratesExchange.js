@@ -1,6 +1,12 @@
 const axios = require("axios")
 const defaultRate = 4.68
 
+/**
+ *
+ * @param {*} myr
+ * @returns {object} {amount_usd, amount_myr, rate_myr}
+ * @description convert myr to usd for paypal payment
+ */
 const ratesExchange = async (myr) => {
   try {
     const res = await axios.get(

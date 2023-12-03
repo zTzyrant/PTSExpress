@@ -3,6 +3,11 @@ const bcrypt = require("bcryptjs")
 const jwt = require("jsonwebtoken")
 const generator = require("generate-password")
 
+/**
+ * @param {string} password
+ * @returns {string} hash
+ * @description hash paassword with bcrypt using salt and secret
+ */
 const hashPassword = async (password) => {
   try {
     const passwordSalted = password + process.env.SALT_SECRET
@@ -14,6 +19,12 @@ const hashPassword = async (password) => {
   }
 }
 
+/**
+ * @param {string} password
+ * @param {string} hash
+ * @returns {boolean} match
+ * @description compare password with hashed password
+ */
 const comparePassword = async (password, hash) => {
   try {
     const passwordSalted = password + process.env.SALT_SECRET
@@ -25,6 +36,10 @@ const comparePassword = async (password, hash) => {
   }
 }
 
+/**
+ * @returns {string} password
+ * @description generate random password
+ */
 const generatePassword = () => {
   const password = generator.generate({
     length: 8,
@@ -35,8 +50,13 @@ const generatePassword = () => {
   return password
 }
 
+/**
+ * @param {object} user
+ * @returns {string} token
+ * @description create token with jwt and expire in 7 days
+ */
 const creteToken = async (user) => {
-  console.log(user)
+  console.log("Create token:", user.fullname)
   const token = jwt.sign(
     {
       id: user._id,
