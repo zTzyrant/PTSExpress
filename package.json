@@ -4,7 +4,8 @@
   "description": "This is PromoTourismSystem Backend with microservice model.",
   "main": "server.js",
   "scripts": {
-    "dev": "nodemon server.js"
+    "dev": "nodemon server.js",
+    "prod": "dotenv -e .env.prod -- nodemon server.js"
   },
   "repository": {
     "type": "git",

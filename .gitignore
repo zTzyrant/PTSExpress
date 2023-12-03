@@ -1,5 +1,7 @@
 node_modules
 .env
+.env.prod
 
 # ignore all files in the uploads directory
 uploads
+temp/uploads
