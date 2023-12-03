@@ -302,7 +302,7 @@ router.get("/merchant/:id", async (req, res) => {
     merchant.document.forEach((document) => {
       document.url = `${originFrom}${document.url}`
     })
-    console.log(merchant)
+    console.log("Return Merchant:", merchant.company_username)
     res.status(200).json(merchant)
   } catch (err) {
     res.status(500).json({ message: err.message })
