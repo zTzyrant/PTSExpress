@@ -22,7 +22,7 @@ ministry.put("/approve/:id", ministryAuth, async (req, res) => {
     const merchant = await Merchant.findOne({
       _id: req.params.id,
     })
-    console.log(merchant)
+    console.log("Trying to approve merchant:", merchant.company_name)
     if (merchant.status === "pending") {
       const checkIfUsernameExist = await Users.findOne({
         username: merchant.company_username,
@@ -58,8 +58,8 @@ ministry.put("/approve/:id", ministryAuth, async (req, res) => {
       })
       merchant.status = "approved"
       const response = await Promise.all([newUser.save(), merchant.save()])
-      console.log("New user:", response[0])
-      console.log("merchant:", response[1])
+      console.log("New user:", response[0].fullname)
+      console.log("merchant:", response[1].company_name)
 
       const merchant_data = {
         email: merchant.email,
