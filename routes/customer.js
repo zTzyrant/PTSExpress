@@ -8,6 +8,12 @@ const Review = require("../models/review")
 const User = require("../models/users")
 const { customerAuth } = require("../middleware/customerAuth")
 
+/**
+ * @path /customer/my_order
+ * @method GET
+ * @returns {Array} invoices (orders)
+ * @description Get all invoices or orders of a customer
+ */
 customer.get("/my_order", customerAuth, async (req, res) => {
   const decoded = req.user
 
@@ -71,6 +77,12 @@ customer.get("/my_order", customerAuth, async (req, res) => {
   }
 })
 
+/**
+ * @path /customer/my_order/review
+ * @method GET
+ * @returns {Array} invoices (orders)
+ * @description Get all invoices or orders of a customer
+ */
 customer.get("/my_order/review", customerAuth, async (req, res) => {
   const decoded = req.user
   try {
@@ -140,6 +152,12 @@ customer.get("/my_order/review", customerAuth, async (req, res) => {
   }
 })
 
+/**
+ * @path /customer/my_order/review/:id
+ * @method POST
+ * @returns {Object} review
+ * @description Post a review for a product
+ */
 customer.post("/my_order/review/:id", customerAuth, async (req, res) => {
   const { rating, comment, is_recommend } = req.body
   const { id } = req.params

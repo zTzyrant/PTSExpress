@@ -11,6 +11,11 @@ auth.get("/", (req, res) => {
   res.send("Hello world from auth")
 })
 
+/**
+ * @path /auth/login
+ * @method POST
+ * @returns {Object} token, expiresIn, date_expired
+ */
 auth.post("/login", async (req, res) => {
   // Validate user input
   const { username, email, password, isEmailLogin } = req.body
@@ -52,6 +57,11 @@ auth.post("/login", async (req, res) => {
   }
 })
 
+/**
+ * @path /auth/profile
+ * @method GET
+ * @returns {Object} user profile
+ */
 auth.get("/user/profile", async (req, res) => {
   const token = req.headers["authorization"]
     ? req.headers["authorization"].split(" ")[1]
@@ -69,6 +79,12 @@ auth.get("/user/profile", async (req, res) => {
   }
 })
 
+/**
+ * @path /auth/ministry
+ * @method POST
+ * @returns {Object} registered user ministry
+ * @description Register new user ministry for testing purposes
+ */
 auth.post("/ministry", async (req, res) => {
   // Validate user input
   const { username, email, password, fullname, phone_number, date_of_birth } =
@@ -113,6 +129,12 @@ auth.post("/ministry", async (req, res) => {
   }
 })
 
+/**
+ * @path /auth/check-username/:username
+ * @method GET
+ * @returns {Object} message
+ * @description Check if username already exists
+ */
 auth.get("/check-username/:username", async (req, res) => {
   const username = req.params.username
   if (!username) {
@@ -127,6 +149,12 @@ auth.get("/check-username/:username", async (req, res) => {
   }
 })
 
+/**
+ * @path /auth/check-email/:email
+ * @method GET
+ * @returns {Object} message
+ * @description Check if email already exists
+ */
 auth.get("/check-email/:email", async (req, res) => {
   const email = req.params.email
   const isEmaiValid = /\S+@\S+\.\S+/.test(email)
@@ -146,6 +174,12 @@ auth.get("/check-email/:email", async (req, res) => {
   }
 })
 
+/**
+ * @path /auth/is-ministry
+ * @method GET
+ * @returns {Object} is_ministry
+ * @description Check if user is ministry
+ */
 auth.get("/is-ministry", async (req, res) => {
   const token = req.headers["authorization"]
     ? req.headers["authorization"].split(" ")[1]
@@ -171,6 +205,12 @@ auth.get("/is-ministry", async (req, res) => {
   }
 })
 
+/**
+ * @path /auth/is_merchant
+ * @method GET
+ * @returns {Object} is_merchant
+ * @description Check if user is merchant
+ */
 auth.get("/is-merchant", async (req, res) => {
   const token = req.headers["authorization"]
     ? req.headers["authorization"].split(" ")[1]
@@ -196,6 +236,12 @@ auth.get("/is-merchant", async (req, res) => {
   }
 })
 
+/**
+ * @path /auth/is-customer
+ * @method GET
+ * @returns {Object} is_customer
+ * @description Check if user is customer
+ */
 auth.get("/is-customer", async (req, res) => {
   const token = req.headers["authorization"]
     ? req.headers["authorization"].split(" ")[1]
@@ -223,6 +269,12 @@ auth.get("/is-customer", async (req, res) => {
   }
 })
 
+/**
+ * @path /auth/is-first-login
+ * @method GET
+ * @returns {Object} isfirstlogin
+ * @description Check if user is first time login
+ */
 auth.get("/is-first-login", async (req, res) => {
   const token = req.headers["authorization"]
     ? req.headers["authorization"].split(" ")[1]
@@ -254,6 +306,12 @@ auth.get("/is-first-login", async (req, res) => {
   }
 })
 
+/**
+ * @path /auth/reset-password
+ * @method PUT
+ * @returns {Object} message
+ * @description Reset password
+ */
 auth.put("/reset-password", async (req, res) => {
   const token = req.headers["authorization"]
     ? req.headers["authorization"].split(" ")[1]
@@ -301,6 +359,12 @@ auth.put("/reset-password", async (req, res) => {
   }
 })
 
+/**
+ * @path /auth/customer
+ * @method POST
+ * @returns {Object} registered user customer
+ * @description Register new user customer for testing purposes
+ */
 auth.post("/customer", async (req, res) => {
   try {
     // Validate user input

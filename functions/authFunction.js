@@ -77,6 +77,11 @@ const creteToken = async (user) => {
   return token
 }
 
+/**
+ * @param {string} token
+ * @returns {object} decoded
+ * @description verify token with jwt
+ */
 const verifyToken = async (token) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET)

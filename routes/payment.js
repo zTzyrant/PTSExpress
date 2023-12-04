@@ -75,6 +75,12 @@ const captureOrder = async (orderID) => {
   return handleResponse(response)
 }
 
+/**
+ * Get order details by passing the approved order ID.
+ * @see https://developer.paypal.com/docs/api/orders/v2/#orders_get
+ * @param {String} orderID
+ * @returns {Object} Order details
+ */
 const getOrders = async (id) => {
   const access_token = await getAccessToken()
   const response = await axios({
@@ -107,10 +113,25 @@ async function handleResponse(response) {
   }
 }
 
+/**
+ * @path /payment
+ * @method GET
+ * @returns {Object} message
+ * @description Test route
+ */
 payment.get("/", (req, res) => {
   res.status(200).json({ message: "success" })
 })
 
+/**
+ * @path /payment/invoice
+ * @method POST
+ * @returns {Object} generated invoice, with message
+ * @description Create invoice in database before create order in paypal
+ * @description And also check all required fields
+ * @description Then convert amount from myr to usd
+ * @description Last create invoice in database
+ */
 payment.post("/invoice", customerAuth, async (req, res) => {
   const { date_travel, number_of_guest, note, product_id } = req.body
   if (!date_travel) {
@@ -199,6 +220,12 @@ payment.post("/invoice", customerAuth, async (req, res) => {
   }
 })
 
+/**
+ * @path /payment/invoice/:id/pay
+ * @method POST
+ * @returns {Object} generated invoice, payment_url from paypal API
+ * @description Create order in paypal
+ */
 payment.post("/invoice/:id/pay", customerAuth, async (req, res) => {
   try {
     console.log("Try to generate payment...")
@@ -397,6 +424,12 @@ payment.get("/invoice/:id", async (req, res) => {
   }
 })
 
+/**
+ * @path /payment/invoice/:id
+ * @method DELETE
+ * @returns {Object} message
+ * @description Delete invoice
+ */
 payment.delete("/invoice/:id", customerAuth, async (req, res) => {
   try {
     const { id } = req.params

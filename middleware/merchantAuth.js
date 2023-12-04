@@ -1,6 +1,14 @@
 const authFunction = require("../functions/authFunction")
 const Users = require("../models/users")
 
+/**
+ * @function customerAuth
+ * @param {Object} req
+ * @param {Object} res
+ * @param {Function} next
+ * @returns {Object} req.user (customer) decoded from token
+ * @description Authenticate customer
+ */
 const merchantAuth = async (req, res, next) => {
   if (req.headers["authorization"]) {
     try {

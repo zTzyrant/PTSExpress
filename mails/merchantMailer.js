@@ -1,6 +1,10 @@
 require("dotenv").config()
 const nodemailer = require("nodemailer")
 
+/**
+ * @function transporter
+ * @description transporter is a nodemailer transporter object
+ */
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
@@ -9,6 +13,13 @@ const transporter = nodemailer.createTransport({
   },
 })
 
+/**
+ * @function merchantApproved
+ * @param {Object} merchantData
+ * @param {Object} res
+ * @description Send email to merchant when merchant approved with the merchant login information
+ * @returns {Object} res status 200 if success, status 500 if error
+ */
 const merchantApproved = async (merchantData, res) => {
   const mailOptions = {
     from: "ptscore.team@gmail.com",
@@ -38,6 +49,12 @@ const merchantApproved = async (merchantData, res) => {
   }
 }
 
+/**
+ * @function merchantResetPassword
+ * @param {Object} merchantData
+ * @param {Object} res
+ * @description Send email to merchant when merchant reset password with the merchant login information
+ */
 const merchantResetPassword = async (merchantData, res) => {
   const mailOptions = {
     from: "ptscore.team@gmail.com",

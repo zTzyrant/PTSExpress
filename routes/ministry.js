@@ -8,6 +8,12 @@ const merchaantMail = require("../mails/merchantMailer")
 const Product = require("../models/products")
 const { ministryAuth } = require("../middleware/ministryAuth")
 
+/**
+ * @path /ministry
+ * @method GET
+ * @returns {Object} message, time, user
+ * @description Get ministry server status
+ */
 ministry.get("/", ministryAuth, (req, res, next) => {
   console.log("Time:", Date.now())
   res.status(200).json({
@@ -17,6 +23,12 @@ ministry.get("/", ministryAuth, (req, res, next) => {
   })
 })
 
+/**
+ * @path /ministry/merchant
+ * @method GET
+ * @returns {Array} merchants with status (approved, pending, rejected)
+ * @description Get all merchants
+ */
 ministry.put("/approve/:id", ministryAuth, async (req, res) => {
   try {
     const merchant = await Merchant.findOne({
@@ -77,6 +89,12 @@ ministry.put("/approve/:id", ministryAuth, async (req, res) => {
   }
 })
 
+/**
+ * @path /ministry/pending/:id
+ * @method PUT
+ * @returns {Object} message
+ * @description Update merchant status to pending for testing purposes
+ */
 ministry.put("/pending/:id", ministryAuth, async (req, res) => {
   try {
     const merchant = await Merchant.findOne({
@@ -100,6 +118,12 @@ ministry.put("/pending/:id", ministryAuth, async (req, res) => {
   }
 })
 
+/**
+ * @path /ministry/reject/:id
+ * @method PUT
+ * @returns {Object} message
+ * @description Update merchant status to rejected
+ */
 ministry.put("/reject/:id", ministryAuth, async (req, res) => {
   try {
     const merchant = await Merchant.findOne({
@@ -119,6 +143,12 @@ ministry.put("/reject/:id", ministryAuth, async (req, res) => {
   }
 })
 
+/**
+ * @path /ministry/merchant
+ * @method GET
+ * @returns {Array} merchants with status (approved, pending, rejected)
+ * @description reset merchant password from ministry
+ */
 ministry.put("/reset-password/merchant/:id", ministryAuth, async (req, res) => {
   try {
     const merchant = await Merchant.findOne({
@@ -151,6 +181,12 @@ ministry.put("/reset-password/merchant/:id", ministryAuth, async (req, res) => {
   }
 })
 
+/**
+ * @path /ministry/merchant/analytic
+ * @method GET
+ * @returns {Object} merchantCount, pendingMerchant, approvedMerchant, rejectedMerchant
+ * @description Get merchant analytics (count) of all merchants status
+ */
 ministry.get("/merchant/analytics", ministryAuth, async (req, res) => {
   try {
     const merchantCount = await Merchant.countDocuments()
@@ -175,6 +211,12 @@ ministry.get("/merchant/analytics", ministryAuth, async (req, res) => {
   }
 })
 
+/**
+ * @path /ministry/merchant/top_product
+ * @method GET
+ * @returns {Array} topProduct
+ * @description Get top product sold
+ */
 ministry.get("/merchant/top_product", ministryAuth, async (req, res) => {
   const { merchant_id, limit } = req.query
   console.log(`merchant_id: ${merchant_id} from /ministry/merchant/top_product`)
@@ -220,6 +262,12 @@ ministry.get("/merchant/top_product", ministryAuth, async (req, res) => {
   }
 })
 
+/**
+ * @path /ministry/merchant/top_product
+ * @method GET
+ * @returns {Array} merchant
+ * @description Get merchant with status approved
+ */
 ministry.get("/merchant/approved", ministryAuth, async (req, res) => {
   try {
     const merchant = await Merchant.aggregate([
