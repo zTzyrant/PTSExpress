@@ -277,6 +277,13 @@ merchant.put("/products/:id/picture/upload", merchantAuth, async (req, res) => {
       }
     }
 
+    // check if all files are less than 5 MB and throw error if not
+    if (!files.pictures.every((picture) => picture.size <= 5000000)) {
+      throw {
+        message: "File size must be less than 5 MB",
+      }
+    }
+
     // upload pictures to server, using formidable
     const uploadedPictures = await picture_upload.uploadPicture(files)
 
