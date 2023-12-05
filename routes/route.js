@@ -368,7 +368,12 @@ router.get("/products/", async (req, res) => {
   const categories = req.query.categories ? req.query.categories.split(",") : []
   const min_price = req.query.min_price ? parseFloat(req.query.min_price) : 0
   const max_price = req.query.max_price ? parseFloat(req.query.max_price) : 0
-  const sort = req.query.sort ? req.query.sort : "old"
+  const sort =
+    req.query.sort && req.query.sort === "new"
+      ? "new"
+      : req.query.sort && req.query.sort === "popular"
+      ? "popular"
+      : "old"
 
   try {
     // read at https://docs.mongodb.com/manual/reference/operator/aggregation/match/ for more info
@@ -438,6 +443,12 @@ router.get("/products/", async (req, res) => {
         },
       },
     ])
+
+    if (sort === "popular") {
+      products.sort((a, b) => {
+        return b.count_rating - a.count_rating
+      })
+    }
     const totalProduct = await Products.find().countDocuments()
     const totalPages = Math.ceil(totalProduct / page_size)
 
