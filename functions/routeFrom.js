@@ -7,14 +7,13 @@ require("dotenv").config()
  */
 const isFromTunnel = (origin) => {
   console.log("Request from: ", origin)
-  console.log("production: ", process.env.NODE_ENV === "production")
   if (process.env.NODE_ENV === "production") {
     return process.env.BE_HOST
   }
-  if (origin === process.env.FE_TUNNEL) {
-    return process.env.BE_TUNNEL
-  } else {
+  if (origin === process.env.FE_HOST) {
     return process.env.BE_HOST
+  } else {
+    return process.env.BE_TUNNEL
   }
 }
 
