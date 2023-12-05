@@ -184,6 +184,10 @@ router.post("/merchant", async (req, res) => {
         (file) => !isFileTypeAllowed(file.mimetype)
       )
 
+      // Check file size for all files before proceeding with any uploads
+      // to prevent uploading files that are too big
+      const invalidFileSize = files.file.filter((file) => file.size > 5000000)
+
       // If there are invalid files
       if (invalidFiles.length > 0) {
         const invalidFileNames = invalidFiles.map(
@@ -195,6 +199,21 @@ router.post("/merchant", async (req, res) => {
           message: `Invalid file type for file(s): ${invalidFileNames.join(
             ", "
           )}`,
+        })
+      }
+
+      // If file size is too big
+      if (invalidFileSize.length > 0) {
+        const invalidFileNames = invalidFileSize.map(
+          (file) => file.originalFilename
+        )
+
+        // Delete all incomming files from temp/uploads
+        cleanTempUploads(files.file)
+        return res.status(400).json({
+          message: `File size too big for file(s): ${invalidFileNames.join(
+            ", "
+          )} Max file size is 5MB.`,
         })
       }
 
@@ -349,6 +368,7 @@ router.get("/products/", async (req, res) => {
   const categories = req.query.categories ? req.query.categories.split(",") : []
   const min_price = req.query.min_price ? parseFloat(req.query.min_price) : 0
   const max_price = req.query.max_price ? parseFloat(req.query.max_price) : 0
+  const sort = req.query.sort ? req.query.sort : "old"
 
   try {
     // read at https://docs.mongodb.com/manual/reference/operator/aggregation/match/ for more info
@@ -384,10 +404,38 @@ router.get("/products/", async (req, res) => {
         },
       },
       {
+        $lookup: {
+          from: "reviews",
+          localField: "_id",
+          foreignField: "product_id",
+          as: "reviews",
+          pipeline: [
+            {
+              $project: {
+                _id: 0,
+                rating: 1,
+                comment: 1,
+              },
+            },
+          ],
+        },
+      },
+      {
+        $addFields: {
+          average_rating: { $avg: "$reviews.rating" },
+          count_rating: { $size: "$reviews" },
+        },
+      },
+      {
         $skip: page > 1 ? (page - 1) * page_size : 0,
       },
       {
         $limit: page_size,
+      },
+      {
+        $sort: {
+          created_at: sort === "new" ? -1 : 1,
+        },
       },
     ])
     const totalProduct = await Products.find().countDocuments()
@@ -417,6 +465,7 @@ router.get("/products/", async (req, res) => {
             categories: categories || "",
             min_price: min_price || 0,
             max_price: max_price || 0,
+            sort: sort || "old",
           })}`
 
     const prevPages =
@@ -429,6 +478,7 @@ router.get("/products/", async (req, res) => {
             categories: categories || "",
             min_price: min_price || 0,
             max_price: max_price || 0,
+            sort: sort || "old",
           })}`
 
     res.status(200).json({
