@@ -13,6 +13,7 @@ const Invoice = require("../models/invoice")
 const fs = require("fs-extra")
 const util = require("util")
 const mvPromise = util.promisify(mv)
+const Contact = require("../models/contact")
 
 // Function to check if the file type is allowed
 function isFileTypeAllowed(fileType) {
@@ -689,4 +690,22 @@ router.get("/invoice/:id", async (req, res) => {
   }
 })
 
+router.post("/contact_us", async (req, res) => {
+  const { fullname, email, message } = req.body
+  if (!fullname || !email || !message) {
+    return res.status(400).json({ message: "All fields are required" })
+  }
+  try {
+    const newContact = new Contact({
+      fullname,
+      email,
+      message,
+    })
+    const savedContact = await newContact.save()
+    res.status(200).json(savedContact)
+  } catch (error) {
+    console.error("Error:", error)
+    res.status(500).json({ message: "Internal server error" })
+  }
+})
 module.exports = router
