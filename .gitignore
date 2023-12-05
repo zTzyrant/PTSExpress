@@ -3,5 +3,5 @@ node_modules
 .env.prod
 
 # ignore all files in the uploads directory
-uploads
-temp/uploads
+uploads/*
+temp/uploads/*
