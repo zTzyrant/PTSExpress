@@ -60,16 +60,6 @@ const creteToken = async (user) => {
   const token = jwt.sign(
     {
       id: user._id,
-      username: user.username,
-      email: user.email,
-      fullname: user.fullname,
-      date_of_birth: user.date_of_birth,
-      phone_number: user.phone_number,
-      is_ministry: user.is_ministry,
-      is_merchant: user.is_merchant,
-      is_customer: user.is_customer,
-      is_first_login: user.is_first_login,
-      merchant_id: user.merchant_id,
     },
     process.env.JWT_SECRET,
     { expiresIn: "7d" }

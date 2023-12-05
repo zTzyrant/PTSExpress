@@ -307,6 +307,7 @@ merchant.put("/products/:id/picture/upload", merchantAuth, async (req, res) => {
 
     res.status(201).json(savedProductPictures)
   } catch (err) {
+    console.error("Upload picture error:", err)
     res.status(500).json({ message: err.message })
   }
 })

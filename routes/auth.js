@@ -70,6 +70,11 @@ auth.get("/user/profile", async (req, res) => {
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET)
       const user = await Users.findOne({ _id: decoded.id })
+        .select("-password")
+        .select("-is_first_login")
+        .select("-is_merchant")
+        .select("-is_customer")
+        .select("-is_ministry")
       res.status(200).json(user)
     } catch (err) {
       res.status(500).json({ message: err.message })

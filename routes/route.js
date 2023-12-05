@@ -534,6 +534,14 @@ router.get("/products/:id", async (req, res) => {
                 localField: "customer_id",
                 foreignField: "_id",
                 as: "user",
+                pipeline: [
+                  {
+                    $project: {
+                      _id: 0,
+                      fullname: 1,
+                    },
+                  },
+                ],
               },
             },
             {
@@ -625,6 +633,18 @@ router.get("/invoice/:id", async (req, res) => {
           localField: "customer_id",
           foreignField: "_id",
           as: "user",
+          pipeline: [
+            {
+              $project: {
+                _id: 0,
+                password: 0,
+                is_merchant: 0,
+                is_ministry: 0,
+                is_customer: 0,
+                is_first_login: 0,
+              },
+            },
+          ],
         },
       },
       {
