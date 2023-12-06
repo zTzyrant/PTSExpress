@@ -430,4 +430,24 @@ auth.post("/customer", async (req, res) => {
   }
 })
 
+/**
+ * @path /auth/encrypt/:password
+ * @method GET
+ * @returns {Object} hashed password
+ * @description Encrypt password for testing purposes
+ */
+auth.get("/encrypt/:password", async (req, res) => {
+  const password = req.params.password
+  if (!password) {
+    res.status(400).json({ message: "Invalid input" })
+  } else {
+    try {
+      const hashedPassword = await authFunction.hashPassword(password)
+      res.status(200).json({ password: hashedPassword })
+    } catch (err) {
+      res.status(500).json({ message: err.message })
+    }
+  }
+})
+
 module.exports = auth
