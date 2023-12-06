@@ -1,7 +1,7 @@
 require("dotenv").config()
 const express = require("express")
 const app = express()
-const port = 3000
+const port = process.env.PORT || 3000
 const host = "0.0.0.0"
 const mongoose = require("mongoose")
 const cors = require("cors")
@@ -10,6 +10,8 @@ const {
   clearTempUploads,
 } = require("./functions/deleteFiles")
 const cron = require("node-cron")
+const compression = require("compression")
+const helmet = require("helmet")
 
 console.log("process.env.NODE_ENV:", process.env.NODE_ENV)
 
@@ -20,6 +22,8 @@ db.on("error", (error) => console.log(error))
 db.once("open", () => console.log("Connected to database"))
 
 app.use(cors())
+app.use(compression())
+app.use(helmet())
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 
