@@ -30,6 +30,7 @@ function isFileTypeAllowed(fileType) {
 
 // Remove all incomming files from temp/uploads
 const cleanTempUploads = (files) => {
+  if (!files || files.length === 0) return
   files.forEach((file) => {
     console.log(`Deleting ${file.originalFilename}`)
     fs.unlinkSync(file.filepath)
