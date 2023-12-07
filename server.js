@@ -55,9 +55,11 @@ app.use("/merchant", merchant)
 app.use("/payment", payment)
 app.use("/customer", customer)
 
-app.post("/test-ft", (req, res) => {
-  console.log(req.body)
-  res.status(200).json({ message: "success" })
+app.get("/", (req, res) => {
+  res.status(200).json({
+    message: "Welcome to the PTSExpress API",
+    connection_db: db.name,
+  })
 })
 
 app.listen(port, host, () => console.log(`Server running on port ${port}`))
