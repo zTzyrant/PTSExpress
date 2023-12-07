@@ -21,14 +21,35 @@ const db = mongoose.connection
 db.on("error", (error) => console.log(error))
 db.once("open", () => console.log("Connected to database"))
 
-app.use(cors())
+app.use(
+  cors({
+    methods: "*",
+  })
+)
 app.use(compression())
 app.use(helmet())
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 
 const uploadsDir = require("path").join(__dirname, "uploads")
-app.use("/uploads", express.static(uploadsDir))
+app.use(
+  "/uploads",
+  (req, res, next) => {
+    res.setHeader("Cross-Origin-Resource-Policy", "cross-origin")
+    next()
+  },
+  express.static(uploadsDir)
+)
+
+// Global middleware to set Cross-Origin-Resource-Policy header
+app.use((req, res, next) => {
+  res.setHeader("Cross-Origin-Resource-Policy", "cross-origin")
+  res.header(
+    "Access-Control-Allow-Headers",
+    "Origin, X-Requested-With, Content-Type, Accept, Authorization"
+  )
+  next()
+})
 
 // Run cron job every Sunday at 00:00 for deleting unregistered images or files
 cron.schedule("0 0 * * 0", async () => {
