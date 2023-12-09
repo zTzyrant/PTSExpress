@@ -1,17 +1,5 @@
 require("dotenv").config()
-const nodemailer = require("nodemailer")
-
-/**
- * @function transporter
- * @description Create transporter for sending email
- */
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.MAIL_EMAIL,
-    pass: process.env.MAIL_PASSWORD,
-  },
-})
+const { transporter } = require("./tranporter")
 
 /**
  * @function emailUserCreated
@@ -29,8 +17,8 @@ const emailUserCreated = async (userData, res, originalPassword) => {
     html: `Your account has been created, you can login with the account information below.<br/><br/>Username: ${userData.username}<br/>Email: ${userData.email}<br/>Password: ${originalPassword}<br/><br/>Thank you!`,
   }
   try {
-    await transporter.sendMail(mailOptions)
-    console.log("email sent")
+    const info = await transporter.sendMail(mailOptions)
+    console.log("email sent:", info.response)
     res.status(200).json({
       message: `User Created & email has been send to ${userData.email}`,
     })

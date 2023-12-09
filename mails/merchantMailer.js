@@ -1,17 +1,5 @@
 require("dotenv").config()
-const nodemailer = require("nodemailer")
-
-/**
- * @function transporter
- * @description transporter is a nodemailer transporter object
- */
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.MAIL_EMAIL,
-    pass: process.env.MAIL_PASSWORD,
-  },
-})
+const transporter = require("./tranporter")
 
 /**
  * @function merchantApproved
@@ -57,14 +45,14 @@ const merchantApproved = async (merchantData, res) => {
  */
 const merchantResetPassword = async (merchantData, res) => {
   const mailOptions = {
-    from: "ptscore.team@gmail.com",
+    from: process.env.MAIL_EMAIL,
     to: merchantData.email,
     subject: "Your Merchant password has been reset",
     html: `Your Merchant ${merchantData.company_name} password has been reset, you can login with the account information below.<br/><br/>Username: ${merchantData.username}<br/>Email: ${merchantData.email}<br/>Password: ${merchantData.password}<br/><br/>Thank you!`,
   }
   try {
-    await transporter.sendMail(mailOptions)
-    console.log("email sent")
+    const info = await transporter.sendMail(mailOptions)
+    console.log("email sent:", info.response)
     res.status(200).json({
       message: `Merchant Approved & email has been send to ${merchantData.email}`,
     })
