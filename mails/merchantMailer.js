@@ -1,5 +1,5 @@
 require("dotenv").config()
-const transporter = require("./tranporter")
+const { transporter } = require("./transporter")
 
 /**
  * @function merchantApproved
@@ -10,14 +10,14 @@ const transporter = require("./tranporter")
  */
 const merchantApproved = async (merchantData, res) => {
   const mailOptions = {
-    from: "ptscore.team@gmail.com",
+    from: process.env.MAIL_EMAIL,
     to: merchantData.email,
     subject: "Your Merchant has been approved",
     html: `Your Merchant ${merchantData.company_name} has been approved, you can login with the account information below.<br/><br/>Username: ${merchantData.username}<br/>Email: ${merchantData.email}<br/>Password: ${merchantData.password}<br/><br/>Thank you!`,
   }
   try {
-    await transporter.sendMail(mailOptions)
-    console.log("email sent")
+    const info = await transporter.sendMail(mailOptions)
+    console.log("email sent", info.response)
     res.status(200).json({
       message: `Merchant Approved & email has been send to ${merchantData.email}`,
     })
