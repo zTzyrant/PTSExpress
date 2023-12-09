@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "nodemon server.js",
     "prod": "dotenv -e .env.prod -- nodemon server.js",
-    "host": "dotenv -e .env.prod -- node server.js"
+    "host": "dotenv -e .env.prod -- node server.js",
+    "testdb": "node dbconnect.js"
   },
   "repository": {
     "type": "git",
