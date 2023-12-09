@@ -1,5 +1,5 @@
 require("dotenv").config()
-const { transporter } = require("./transporterr")
+const { transporter } = require("./transporter")
 
 /**
  * @function emailUserCreated
