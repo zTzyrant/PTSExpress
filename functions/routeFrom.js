@@ -10,7 +10,7 @@ const isFromTunnel = (origin) => {
   if (process.env.NODE_ENV === "production") {
     return process.env.BE_HOST
   }
-  if (origin === process.env.FE_HOST) {
+  if (origin === process.env.FE_HOST || origin.includes("localhost")) {
     return process.env.BE_HOST
   } else {
     return process.env.BE_TUNNEL
