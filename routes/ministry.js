@@ -28,6 +28,7 @@ ministry.get("/", ministryAuth, (req, res, next) => {
  * @method GET
  * @returns {Array} merchants with status (approved, pending, rejected)
  * @description Get all merchants
+ * @scope Use Case 2
  */
 ministry.put("/approve/:id", ministryAuth, async (req, res) => {
   try {
@@ -123,6 +124,7 @@ ministry.put("/pending/:id", ministryAuth, async (req, res) => {
  * @method PUT
  * @returns {Object} message
  * @description Update merchant status to rejected
+ * @scope Use Case 2
  */
 ministry.put("/reject/:id", ministryAuth, async (req, res) => {
   try {
@@ -144,10 +146,11 @@ ministry.put("/reject/:id", ministryAuth, async (req, res) => {
 })
 
 /**
- * @path /ministry/merchant
+ * @path /reset-password/merchant/:id
  * @method GET
  * @returns {Array} merchants with status (approved, pending, rejected)
  * @description reset merchant password from ministry
+ * @scope Use Case 2
  */
 ministry.put("/reset-password/merchant/:id", ministryAuth, async (req, res) => {
   try {
@@ -216,6 +219,7 @@ ministry.get("/merchant/analytics", ministryAuth, async (req, res) => {
  * @method GET
  * @returns {Array} topProduct
  * @description Get top product sold
+ * @scope Use Case 6
  */
 ministry.get("/merchant/top_product", ministryAuth, async (req, res) => {
   const { merchant_id, limit } = req.query
@@ -263,10 +267,11 @@ ministry.get("/merchant/top_product", ministryAuth, async (req, res) => {
 })
 
 /**
- * @path /ministry/merchant/top_product
+ * @path /ministry/merchant/approved
  * @method GET
  * @returns {Array} merchant
  * @description Get merchant with status approved
+ * @scope Use Case 6
  */
 ministry.get("/merchant/approved", ministryAuth, async (req, res) => {
   try {

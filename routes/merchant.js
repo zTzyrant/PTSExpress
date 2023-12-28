@@ -83,6 +83,7 @@ merchant.get("/", merchantAuth, async (req, res) => {
  * @description get all products by merchant id
  * @middleware merchantAuth
  * @returns {Object} products
+ * @scope Use Case 3
  */
 merchant.get("/products", merchantAuth, async (req, res) => {
   try {
@@ -135,6 +136,7 @@ merchant.get("/products", merchantAuth, async (req, res) => {
  * @description get product by id
  * @middleware merchantAuth
  * @returns {Object} product
+ * @scope Use Case 3
  */
 merchant.get("/products/:id", merchantAuth, async (req, res) => {
   try {
@@ -251,6 +253,7 @@ merchant.post("/products", merchantAuth, async (req, res) => {
  * @description upload product pictures
  * @middleware merchantAuth
  * @returns {Object} productPictures
+ * @scope Use Case 3
  */
 merchant.put("/products/:id/picture/upload", merchantAuth, async (req, res) => {
   try {
@@ -328,7 +331,12 @@ merchant.delete("/products/:id/picture", merchantAuth, async (req, res) => {
   }
 })
 
-// this end point delete multiple pictures
+/**
+ * @path /merchant/products/:id/picture/remove
+ * @method PATCH
+ * @description remove product pictures
+ * @scope Use Case 3
+ */
 merchant.patch(
   "/products/:id/picture/remove",
   merchantAuth,
@@ -385,6 +393,7 @@ merchant.get("/products/:id/picture", merchantAuth, async (req, res) => {
  * @description update product by id
  * @middleware merchantAuth
  * @returns {Object} product
+ * @scope Use Case 3
  */
 merchant.put("/products/:id", merchantAuth, async (req, res) => {
   if (validateProduct(req)) return res.status(400).json(validateProduct(req))
@@ -455,6 +464,7 @@ merchant.put("/products/:id", merchantAuth, async (req, res) => {
  * @method DELETE
  * @description delete product by id
  * @middleware merchantAuth
+ * @scope Use Case 3
  */
 merchant.delete("/products/:id", merchantAuth, async (req, res) => {
   try {
@@ -531,6 +541,7 @@ merchant.get("/orders", merchantAuth, async (req, res) => {
  * @description get top product by merchant id
  * @middleware merchantAuth
  * @returns {Object} topProducts
+ * @scope Use Case 6
  */
 merchant.get("/top_product", merchantAuth, async (req, res) => {
   const { limit } = req.query

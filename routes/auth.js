@@ -61,6 +61,8 @@ auth.post("/login", async (req, res) => {
  * @path /auth/profile
  * @method GET
  * @returns {Object} user profile
+ * @description Get user profile
+ * @scope Use Case 2
  */
 auth.get("/user/profile", async (req, res) => {
   const token = req.headers["authorization"]
@@ -139,6 +141,7 @@ auth.post("/ministry", async (req, res) => {
  * @method GET
  * @returns {Object} message
  * @description Check if username already exists
+ * @scpoe Use Case 1
  */
 auth.get("/check-username/:username", async (req, res) => {
   const username = req.params.username
@@ -159,6 +162,7 @@ auth.get("/check-username/:username", async (req, res) => {
  * @method GET
  * @returns {Object} message
  * @description Check if email already exists
+ * @scpoe Use Case 1
  */
 auth.get("/check-email/:email", async (req, res) => {
   const email = req.params.email

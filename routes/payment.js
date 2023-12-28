@@ -131,6 +131,7 @@ payment.get("/", (req, res) => {
  * @description And also check all required fields
  * @description Then convert amount from myr to usd
  * @description Last create invoice in database
+ * @scope Use Case 4
  */
 payment.post("/invoice", customerAuth, async (req, res) => {
   const { date_travel, number_of_guest, note, product_id } = req.body
@@ -225,6 +226,7 @@ payment.post("/invoice", customerAuth, async (req, res) => {
  * @method POST
  * @returns {Object} generated invoice, payment_url from paypal API
  * @description Create order in paypal
+ * @scope Use Case 4
  */
 payment.post("/invoice/:id/pay", customerAuth, async (req, res) => {
   try {

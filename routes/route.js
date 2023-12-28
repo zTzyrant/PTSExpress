@@ -94,6 +94,7 @@ router.post("/users/", async (req, res) => {
  * @POST /api/users
  * @returns {object} merchant
  * @description Register new merchant with strict validation
+ * @scope Use Case 1
  */
 router.post("/merchant", async (req, res) => {
   const form_data = new formidable.IncomingForm({
@@ -315,6 +316,7 @@ router.post("/merchant", async (req, res) => {
  * @GET /api/merchant/:id
  * @returns {object} merchant
  * @description Get Merchant data by id
+ * @scope Use Case 2
  */
 router.get("/merchant/:id", async (req, res) => {
   try {
@@ -334,6 +336,7 @@ router.get("/merchant/:id", async (req, res) => {
  * @GET /api/merchant
  * @returns {object} merchant
  * @description Get all merchant data with out pagination
+ * @scope Use Case 2
  */
 router.get("/merchant_all_without_pagination", async (req, res) => {
   try {
@@ -345,9 +348,10 @@ router.get("/merchant_all_without_pagination", async (req, res) => {
 })
 
 /**
- * @GET /api/products/categories
+ * @GET /api/product/categories
  * @returns {object} categories
  * @description Get all product categories that are registered in database
+ * @scope Use Case 3
  */
 router.get("/product/categories", async (req, res) => {
   try {
@@ -512,6 +516,7 @@ router.get("/products/", async (req, res) => {
  * @GET /api/products/:id
  * @returns {object} product
  * @description Get product by id
+ * @scope Use Case 3, 4
  */
 router.get("/products/:id", async (req, res) => {
   try {

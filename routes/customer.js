@@ -82,6 +82,7 @@ customer.get("/my_order", customerAuth, async (req, res) => {
  * @method GET
  * @returns {Array} invoices (orders)
  * @description Get all invoices or orders of a customer
+ * @scope Use Case 5
  */
 customer.get("/my_order/review", customerAuth, async (req, res) => {
   const decoded = req.user
@@ -157,6 +158,7 @@ customer.get("/my_order/review", customerAuth, async (req, res) => {
  * @method POST
  * @returns {Object} review
  * @description Post a review for a product
+ * @scope Use Case 5
  */
 customer.post("/my_order/review/:id", customerAuth, async (req, res) => {
   const { rating, comment, is_recommend } = req.body
